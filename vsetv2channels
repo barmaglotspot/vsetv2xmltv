@@ -1,0 +1,15 @@
+#!/bin/sh
+
+EPGUPD="vsetv2xmltv"
+EPGSOURCES="/storage/.config/epgs"
+EPGSOURCES_CONF="$EPGSOURCES/config/$EPGUPD"
+EPGSOURCES_RES="$EPGSOURCES/resources/$EPGUPD"
+GETCHANNELS="$EPGSOURCES_RES/getchannels.py"
+CHANNELS_FILE="$EPGSOURCES_CONF/channels.cfg"
+
+rm -rf /tmp/vsetv
+mkdir -p /tmp/vsetv
+
+echo "Running vsetv2channels"
+python $GETCHANNELS $CHANNELS_FILE  
+
