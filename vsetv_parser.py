@@ -126,7 +126,7 @@ class programme_data(object):
         return 0
 
 class parser_vsetv(object):
-    __slots__ = ('ahost', 'adirection', 'alogdir', 'acharset', 'flogger', 'fgrab', 'fgrabdesc', 'fchanneldata', 'fprogrammedata', 'channelsfiledata', 'currentdata', 'isfulldesc', 'outxml')
+    __slots__ = ('ahost', 'alogdir', 'acharset', 'flogger', 'fgrab', 'fgrabdesc', 'fchanneldata', 'fprogrammedata', 'channelsfiledata', 'currentdata', 'isfulldesc', 'outxml')
 
     def __init__(self, vhost, vlogdir, vcharset):
         
@@ -151,12 +151,15 @@ class parser_vsetv(object):
 
     def getcontent(self, vdirection, desc=0):
         
-        self.adirection = vdirection
         if desc == 0:
-            self.fgrab.go(self.ahost + self.adirection)
+    	    self.fgrab = Grab()
+    	    self.fgrab.setup(log_dir=self.alogdir, charset=self.acharset)
+    	    self.fgrab.go(self.ahost + vdirection)
             
         else:
-            self.fgrabdesc.go(self.ahost + self.adirection)
+    	    self.fgrabdesc = Grab()
+    	    self.fgrabdesc.setup(log_dir=self.alogdir, charset=self.acharset)
+            self.fgrabdesc.go(self.ahost + vdirection)
             
         return 0
 
@@ -166,6 +169,9 @@ class parser_vsetv(object):
         cname = ''
         clink = ''
         cicon = ''
+        
+        self.fgrab = Grab()
+    	self.fgrab.setup(log_dir=self.alogdir, charset=self.acharset)
         
         for node in self.fgrab.doc.select('//td[@valign="top"]'):
             try:
@@ -241,28 +247,13 @@ class parser_vsetv(object):
         
         return rstr
 
-    def removetabs(self, vstr):
-        
-        rstr = vstr.strip('\n').strip('\t').strip('\r').lstrip().rstrip()
-        
-        return rstr
-
-    def parse_strings(self, vstr, vbegin, vend, vdeltags=1, vdeltabs=1, vdelbegin=1):
+    def parse_strings(self, vstr, vbegin, vend):
         
         idx_beg = vstr.find(vbegin)
         idx_end = vstr.find(vend)
-        rstr = vstr[idx_beg:idx_end]
-        
-        if vdeltags == 1:
-            rstr = self.removetags(rstr)
-            
-        if vdeltabs == 1:
-            rstr = self.removetabs(rstr)
-            
-        if vdelbegin == 1:
-            rstr = rstr.strip(vbegin)
-            
-        return rstr.strip()
+        tstr = vstr[idx_beg:idx_end]
+        rstr = self.removetags(tstr)
+        return rstr.strip('\t\n\r').strip(' ')
 
     def get_datetime_str(self, vdate, vtype):
         
@@ -311,21 +302,38 @@ class parser_vsetv(object):
             # get date and genre
             cdate = ''
             cgenre = ''
+            ccountry = ''
             ctmp = ''
             
             try:
                 node = self.fgrabdesc.doc.select('//td[@class="showname"]')
                 
                 if node.html().find('<strong>') != -1:
-                    ctmp = self.parse_strings(node.html(), '<br>', '<strong>', 1, 1, 0).strip(',')
+                    ctmp = self.parse_strings(node.html(), '<br>', '<strong>').strip(',')
                     
                 else:
-                    ctmp = self.parse_strings(node.html(), '<br>', '<!--', 1, 1, 0).strip(',')
+                    ctmp = self.parse_strings(node.html(), '<br>', '<!--').strip(',')
                     
-                cdate = ctmp.split(',')[1].strip()
+                ccountry = ctmp.split(',')[0].strip(' ')    
+                tdate = ctmp.split(',')[1].strip(' ')
+                
+                idx_beg = tdate.find('-')
+                
+                if idx_beg != -1:
+                    if tdate[5:9].isdigit():
+            		cdate = tdate[0:9]
+            	    else:
+            		cdate = tdate[0:4]
+            	else:
+            	    if tdate[0:4].isdigit():
+            		cdate = tdate[0:4]
+            	    else:
+            		cdate = ''
                 
                 if cdate != '':
                     vprogrammedata.Date = cdate
+                    
+                ctmp = ccountry + ', ' + cdate
 
                 cgenre = node.select('.//strong').text().replace(' / ', ',')
                 
@@ -337,6 +345,7 @@ class parser_vsetv(object):
                         vprogrammedata.Category = cgenre
                         
             except Exception:
+                ctmp = ''
                 cdate = ''
                 cgenre = ''
                 
@@ -350,12 +359,12 @@ class parser_vsetv(object):
                 cdirectors = self.parse_strings(node.html(), 'Режиссер(ы):', '<br>')
                 
                 if cdirectors != '':
-                    vprogrammedata.Directors = cdirectors
+                    vprogrammedata.Directors = cdirectors[12:]
  
                 cactors = self.parse_strings(node.html(), 'Актеры:', '<div>')
                 
                 if cactors != '':
-                    vprogrammedata.Actors = cactors
+                    vprogrammedata.Actors = cactors[7:]
  
                 cdesc = node.select('.//span[@class="big"]').text()
                 
@@ -447,16 +456,21 @@ class parser_vsetv(object):
         return 0
 
     def parsecontent_programme_all(self, vcntday):
+	try:
         
-        for dc in self.fchanneldata:
-            nowdt = datetime.datetime.now()
-            curdt = nowdt
+    	    for dc in self.fchanneldata:
+        	nowdt = datetime.datetime.now()
+        	curdt = nowdt
             
-            while curdt != nowdt + datetime.timedelta(days=vcntday):
-                self.parsecontent_programme(dc, curdt)
-                curdt = curdt + datetime.timedelta(days=1)
+        	while curdt != nowdt + datetime.timedelta(days=vcntday):
+            	    self.parsecontent_programme(dc, curdt)
+            	    curdt = curdt + datetime.timedelta(days=1)
                 
-        return 0
+    	    return 0
+    	    
+    	except Exception, e:
+    	    print 'ERROR: (%s)' % repr(e)
+
 
     def parsecontent_programme(self, vchanneldata, vdate):
         
@@ -484,8 +498,7 @@ class parser_vsetv(object):
                 ctimeb = self.get_datetime_fmt(vdate, ctimeb + ':00', vchanneldata.Correction)
                 ctimee = self.get_datetime_fmt(vdate, '23:59:59', vchanneldata.Correction)
                 nodetitle = node.select('.//following-sibling::div[@class="pastprname2" or @class="prname2"]')
-                ctitle = nodetitle.text().lstrip().rstrip()
-                ctitle = ctitle.replace('&amp;', '&')
+                ctitle = nodetitle.text().replace('&amp;', '&').strip(' ')
                 dp = programme_data(vchanneldata.Index, ctimeb, ctitle, ctimee)
                 self.get_parsecategory(dp)
                 i += 1
