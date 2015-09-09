@@ -1,24 +1,25 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import sys
-import vsetv_parser
 
-count_day = 3
-fulldesc = True
-parser = vsetv_parser.parser_vsetv('http://www.vsetv.com/', '/tmp/vsetv', 'windows-1251')
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))
+
+import ufunctions
+
+vChannelFile = os.path.join(os.path.dirname(__file__), 'channels.cfg')
+vXMLOut = os.path.join(os.path.dirname(__file__), 'xmltv.xml')
+vCountDay = 1
+vFullDesc = 'true'
+
 if len(sys.argv) > 1:
-    parser.channelsfiledata = sys.argv[1]
+    vChannelFile = sys.argv[1]
 if len(sys.argv) > 2:
-    parser.outxml = sys.argv[2]
+    vXMLOut = sys.argv[2]
 if len(sys.argv) > 3:
-    count_day = int(sys.argv[3])
+    vCountDay = int(sys.argv[3])
 if len(sys.argv) > 4:
-    fulldesc = False
-    sfulldesc = sys.argv[4]
-    if sfulldesc == '1':
-        fulldesc = True 
-parser.load_channeldata()
-parser.isfulldesc = fulldesc
-parser.parsecontent_programme_all(count_day)
-parser.set_programmestop()
-parser.save_xmltv()
+    vFullDesc = sys.argv[4]
+
+ufunctions.save_xmltv(vXMLOut, vCountDay, vFullDesc, vChannelFile)

@@ -7,9 +7,6 @@ EPGSOURCES_RES="$EPGSOURCES/resources/$EPGUPD"
 GETCHANNELS="$EPGSOURCES_RES/getchannels.py"
 CHANNELS_FILE="$EPGSOURCES_CONF/channels.cfg"
 
-rm -rf /tmp/vsetv
-mkdir -p /tmp/vsetv
-
 echo "Running vsetv2channels"
 python $GETCHANNELS $CHANNELS_FILE  
 

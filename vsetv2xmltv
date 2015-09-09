@@ -8,10 +8,7 @@ PARSER="$EPGSOURCES_RES/vsetv.py"
 CHANNELS_FILE="$EPGSOURCES_CONF/channels.cfg"
 XMLTV_FILE="/storage/epgsources/xmltv.xml"
 DAYS="3"
-FDESC="1"
-
-rm -rf /tmp/vsetv
-mkdir -p /tmp/vsetv
+FDESC="true"
 
 echo "Running vsetv2xmltv"
 python $PARSER $CHANNELS_FILE $XMLTV_FILE $DAYS $FDESC
